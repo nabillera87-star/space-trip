@@ -52,4 +52,12 @@ export const sfx = {
   arrive: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, { at: i * 0.12, dur: 0.45, vol: 0.35 })),
   sparkle: () => [1319, 1568, 2093].forEach((f, i) => tone(f, { at: i * 0.07, dur: 0.35, vol: 0.18 })),
   hot: () => tone(392, { dur: 0.3, vol: 0.3, glide: 0.8 }),
+  // 우주선 안으로 줌인: 짧고 부드러운 「슈웅」
+  whoosh: () => { tone(260, { dur: 0.8, vol: 0.22, type: 'triangle', glide: 2.6 }); tone(390, { at: 0.05, dur: 0.7, vol: 0.12, glide: 2.2 }); },
+  // 로봇 「삐빅」
+  beep: () => { tone(1175, { dur: 0.09, vol: 0.16, type: 'triangle' }); tone(1568, { at: 0.11, dur: 0.12, vol: 0.16, type: 'triangle' }); },
+  // 설명 넘기기
+  page: () => tone(880, { dur: 0.1, vol: 0.18, glide: 1.2 }),
+  // 조종기
+  stick: () => { tone(392, { dur: 0.18, vol: 0.25 }); tone(587, { at: 0.1, dur: 0.3, vol: 0.25 }); },
 };

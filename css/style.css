@@ -223,3 +223,160 @@ h1 { margin: 0; font-size: clamp(40px, 8vw, 72px); font-weight: normal; color: v
   background: rgba(255,158,199,0.9); padding: 16px 40px; border-radius: 999px;
   animation: pop .5s ease-out; pointer-events: none; white-space: nowrap;
 }
+
+/* 6. 우주선 안 ─ 밝은 조종석. 창(.cab-window) 안은 비어 있어 3D 천체가 비친다 */
+#screen-cabin { padding: 0; display: block; --dash: 25vh; }
+@media (orientation: portrait) { #screen-cabin { --dash: 22vh; } }
+.cab-frame { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }   /* 창틀 그림자를 화면 크기로 잘라 줌인 애니메이션 층을 작게 */
+#screen-cabin.entering .cab-frame { animation: cabIn .6s cubic-bezier(.2,.8,.3,1) both; }
+#screen-cabin.entering .cab-talk { animation: talkIn .5s .45s cubic-bezier(.3,1.4,.5,1) both; }
+#screen-cabin.entering #cab-out { animation: talkIn .4s .6s both; }
+#screen-cabin.leaving .cab-frame, #screen-cabin.leaving .cab-talk, #screen-cabin.leaving #cab-out { animation: cabOut .35s ease-in both; }
+@keyframes cabIn { from { transform: scale(1.6); opacity: 0; } }
+@keyframes cabOut { to { transform: scale(1.4); opacity: 0; } }
+@keyframes talkIn { from { transform: translateY(40px) scale(.8); opacity: 0; } }
+
+.cab-window {
+  position: absolute; left: 2.5vw; right: 2.5vw; top: max(2.5vh, env(safe-area-inset-top)); bottom: calc(var(--dash) - 28px);
+  border-radius: 46px;
+  box-shadow:
+    inset 0 0 0 4px rgba(255,182,213,.95), inset 0 0 34px rgba(255,182,213,.35),
+    0 0 0 10px #c3c9e6, 0 0 0 15px #f7f8fe, 0 0 0 100vmax #e6e3f6;
+}
+.cab-glass {
+  position: absolute; inset: 0; border-radius: inherit;
+  background:
+    linear-gradient(115deg, transparent 18%, rgba(255,255,255,.06) 24%, transparent 31%),
+    linear-gradient(115deg, transparent 33%, rgba(255,255,255,.035) 36%, transparent 40%);
+}
+.cab-dash {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--dash);
+  border-radius: 56px 56px 0 0;
+  background: linear-gradient(#fbfbff, #dcdff2 70%, #cfd3ea);
+  box-shadow: 0 -4px 0 #ffc6de, 0 -12px 30px rgba(255,170,210,.35);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4vw max(10px, env(safe-area-inset-bottom));
+}
+.dash-lights { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.dash-lights i {
+  width: clamp(16px, 2.4vw, 26px); height: clamp(12px, 1.7vw, 18px); border-radius: 6px;
+  background: var(--mint); box-shadow: 0 0 10px currentColor; color: var(--mint);
+  animation: blinky 2.4s ease-in-out infinite;
+}
+.dash-lights i:nth-child(3n+1) { background: var(--pink); color: var(--pink); animation-delay: -.6s; }
+.dash-lights i:nth-child(3n+2) { background: var(--yellow); color: var(--yellow); animation-delay: -1.3s; animation-duration: 3.1s; }
+.dash-lights i:nth-child(4n) { background: var(--lav); color: var(--lav); animation-delay: -1.9s; }
+@keyframes blinky { 50% { opacity: .45; } }
+.dash-screen {
+  position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(calc(-50% - 150px));
+  width: 96px; height: 70px; border-radius: 16px; background: #2d3366; overflow: hidden;
+  box-shadow: inset 0 0 0 3px #9fb0ff, 0 0 14px rgba(150,170,255,.5);
+}
+.radar { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(143,227,200,.55), transparent 25%); animation: spin 3s linear infinite; }
+#dash-name { position: absolute; inset: auto 0 6px; text-align: center; font-size: 15px; color: #dff; white-space: nowrap; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 조종기: 크고 눌러 보고 싶게 은은히 빛난다 */
+#cab-stick {
+  position: absolute; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  width: clamp(130px, 17vh, 170px); height: clamp(130px, 17vh, 170px);
+  border: none; background: none; padding: 0; pointer-events: auto;
+}
+.stick-base { position: absolute; left: 6%; right: 6%; bottom: 0; height: 30%; border-radius: 50%;
+  background: radial-gradient(#6b6fb0, #42467e); box-shadow: 0 0 0 5px #c8b6ff, 0 0 22px rgba(200,182,255,.8); }
+.stick-shaft { position: absolute; left: 50%; bottom: 12%; width: 16%; height: 50%; margin-left: -8%; border-radius: 10px;
+  background: linear-gradient(90deg, #aab1d6, #eef0fb 45%, #9aa2cc); transform-origin: 50% 100%; transition: transform .25s; }
+.stick-ball { position: absolute; left: 50%; top: 2%; width: 50%; height: 50%; margin-left: -25%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffb1d2 30%, #ff7fb4 80%);
+  box-shadow: 0 0 18px rgba(255,140,190,.9); animation: stickGlow 1.8s ease-in-out infinite; transition: transform .25s; }
+@keyframes stickGlow { 50% { box-shadow: 0 0 34px 8px rgba(255,140,190,.75); } }
+#cab-stick.call .stick-ball { animation: stickCall .9s ease-in-out infinite; }
+@keyframes stickCall { 50% { box-shadow: 0 0 46px 18px rgba(255,214,110,.9); transform: scale(1.12); } }
+#cab-stick.pushed .stick-shaft { transform: rotate(-24deg); }
+#cab-stick.pushed .stick-ball { transform: translate(-34%, 8%); }
+
+/* 창 너머 천체 자리(보이지 않음, cabin.js가 재서 카메라를 맞춘다) */
+.cab-spot { position: absolute; left: 59vw; right: 7vw; top: 7vh; bottom: calc(var(--dash) + 6vh); pointer-events: none; }
+@media (orientation: portrait) { .cab-spot { left: 6vw; right: 6vw; top: 6vh; bottom: 59vh; } }
+
+/* 로봇 + 말풍선 */
+.cab-talk {
+  position: absolute; left: 2.5vw; bottom: calc(var(--dash) + 10px);
+  width: min(57vw, 760px); display: flex; align-items: flex-end; gap: 4px;
+}
+@media (orientation: portrait) { .cab-talk { width: 95vw; } }
+#screen-cabin.naming .cab-talk { bottom: auto; top: max(96px, 12vh); left: 50%; transform: translateX(-50%); width: min(94vw, 760px); align-items: flex-start; }
+.robot-wrap { flex: none; width: clamp(140px, 24vh, 230px); display: flex; flex-direction: column; align-items: center; }
+#robot { border: none; background: none; padding: 0; width: 100%; }
+#robot svg { width: 100%; display: block; overflow: visible; }
+#robot-tag {
+  margin-top: -6px; border: none; border-radius: 999px; padding: 3px 16px;
+  background: rgba(255,255,255,.92); color: #6a5aa8; font-size: clamp(17px, 2.4vh, 22px);
+  box-shadow: 0 2px 8px rgba(80,60,140,.2);
+}
+.rb-float { animation: float 3.2s ease-in-out infinite; }
+.rb-shadow { animation: shadowPulse 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes float { 50% { transform: translateY(-10px); } }
+@keyframes shadowPulse { 50% { transform: scale(.8); opacity: .7; } }
+.rb-eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.6s infinite; }
+@keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+.rb-head { transform-box: view-box; transform-origin: 100px 150px; }
+.rb-star { transform-box: fill-box; transform-origin: center; animation: twinkle 2.2s ease-in-out infinite; }
+@keyframes twinkle { 50% { transform: scale(1.15) rotate(12deg); } }
+.rb-arm { transform-box: view-box; }
+.rb-arm.l { transform-origin: 60px 160px; }
+.rb-arm.r { transform-origin: 140px 160px; }
+#robot.nod .rb-head { animation: nod .6s ease-in-out; }
+@keyframes nod { 30% { transform: rotate(-7deg) translateY(3px); } 65% { transform: rotate(5deg); } }
+#robot.wave .rb-arm.r { animation: wave 1.1s ease-in-out; }
+@keyframes wave { 20%, 60% { transform: rotate(-70deg); } 40%, 80% { transform: rotate(-40deg); } }
+#robot.hop svg { animation: hop .5s ease-out; }
+@keyframes hop { 40% { transform: translateY(-22px) scale(1.04); } }
+.rb-heart { transform-box: fill-box; transform-origin: center; }
+#robot.glow .rb-heart { animation: heart .9s ease-out; }
+@keyframes heart { 30% { transform: scale(1.35); fill: #ffd66e; filter: drop-shadow(0 0 8px #ffd66e); } }
+
+.bubble {
+  position: relative; flex: 1; min-width: 0;
+  background: #fff; color: var(--ink); border-radius: 30px;
+  padding: 14px 18px 12px; margin-bottom: 26px;
+  box-shadow: 0 8px 0 #d9d2f3, 0 14px 30px rgba(40,30,90,.3);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.bubble::before {   /* 로봇 쪽 꼬리 */
+  content: ""; position: absolute; left: -16px; bottom: 46px;
+  border: 14px solid transparent; border-right: 20px solid #fff; border-left: 0;
+}
+.bubble.flip #cab-pic, .bubble.flip #cab-say { animation: flipIn .35s ease-out; }
+@keyframes flipIn { from { opacity: 0; transform: translateY(10px); } }
+#cab-pic { display: flex; justify-content: center; align-items: center; min-height: 0; }
+.pic-emoji { font-size: clamp(56px, 9vh, 84px); line-height: 1.1; }
+.pic-body { width: clamp(84px, 13vh, 120px); height: clamp(84px, 13vh, 120px); display: block; object-fit: contain; }
+.pic-size { width: 340px; max-width: 100%; height: auto; display: block; }
+#cab-say { font-size: clamp(24px, 3.6vh, 34px); line-height: 1.38; text-align: center; word-break: keep-all; }
+.cab-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; margin-top: 4px; }
+.btn-nav { width: clamp(76px, 10vh, 92px); height: clamp(64px, 8.4vh, 76px); font-size: clamp(30px, 4.4vh, 40px); padding: 0; background: #b9a6ff; box-shadow: 0 6px 0 #8f78e6; }
+.btn-nav:active { box-shadow: 0 2px 0 #8f78e6; }
+#cab-next { background: var(--pink); box-shadow: 0 6px 0 var(--pink-d); animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateX(4px); } }
+.cab-dots { display: flex; gap: 8px; }
+.cab-dots span { width: 12px; height: 12px; border-radius: 50%; background: #ddd6f5; }
+.cab-dots span.on { background: var(--pink); transform: scale(1.3); }
+#robot-name-row { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+#robot-name-input {
+  width: 100%; font-family: var(--font); font-size: clamp(34px, 5vh, 48px); text-align: center;
+  padding: 8px 16px; border-radius: 24px; border: 5px solid var(--lav); background: #fff; color: var(--ink); outline: none;
+  -webkit-user-select: text; user-select: text;
+}
+#robot-name-input:focus { border-color: var(--yellow); }
+#robot-name-input::placeholder { color: #cfc8e6; }
+.name-btns { display: flex; gap: 14px; }
+.name-btns .btn { font-size: clamp(26px, 3.8vh, 34px); padding: 10px 34px; }
+.btn-soft { background: #c9c3dd; box-shadow: 0 6px 0 #a59fbd; }
+#cab-out {
+  position: absolute; top: max(16px, env(safe-area-inset-top)); right: 4vw;
+  font-size: clamp(24px, 3.4vh, 32px); padding: 12px 28px;
+  background: #7cc8f5; box-shadow: 0 6px 0 #4fa3d6, 0 10px 20px rgba(0,0,0,.2);
+}
+#cab-out:active { box-shadow: 0 2px 0 #4fa3d6; }

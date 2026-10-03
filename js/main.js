@@ -1,8 +1,10 @@
 // 화면 흐름: 이름 → 발사 → 목적지 고르기 → 비행 → 도착 → (우주선 누르면) 고르기 …
+//                                                    └ (천체 누르면) 우주선 안 → 조종기: 고르기 / 밖으로: 도착
 
 import { byId, PICK_ROWS } from './data.js';
 import * as flight from './flight.js';
 import { makeThumbs } from './thumbs.js';
+import * as cabin from './cabin.js';
 import { sfx, unlock, isOn, setOn } from './audio.js';
 
 const NAME_KEY = 'space-trip.name';   // 이름은 이 기기 브라우저에만 둔다
@@ -130,8 +132,8 @@ function buildPicker() {
   }
 }
 buildPicker();
-makeThumbs(PICK_ROWS.flatMap(r => r.ids)).then(urls => {
-  for (const id in urls) cardImgs[id].src = urls[id];
+makeThumbs([...PICK_ROWS.flatMap(r => r.ids), 'charon']).then(urls => {
+  for (const id in urls) if (cardImgs[id]) cardImgs[id].src = urls[id];
   $('#loading').textContent = '';
 });
 
@@ -175,6 +177,26 @@ function arrived(id) {
 }
 $('#ship-btn').addEventListener('click', () => { sfx.tap(); openSelect(); });
 
+// ── 6. 우주선 안 ─────────────────────────────────
+// 도착 화면에서 천체를 누르면: 반짝 → 카메라가 우주선 조종석 창을 지나 안으로 → 로봇 설명
+flight.setBodyTap(id => {
+  setTimeout(() => {
+    if (flight.getMode() !== 'arrived' || $('#screen-arrive').hidden) return;
+    if (!flight.enterCabin(cabin.spotView(), () => { show('screen-cabin'); cabin.openCabin(id, astro); })) return;
+    $('#screen-arrive').hidden = true;
+  }, 250);
+});
+cabin.initCabin({
+  stick: () => { flight.exitCabin(); openSelect(); },
+  out: () => {
+    cabin.leaveCabin();
+    flight.exitCabin();
+    setTimeout(() => { if (flight.getMode() === 'arrived') show('screen-arrive'); }, 350);
+  },
+  face: () => flight.faceFeature(),
+});
+window.addEventListener('resize', () => { if (!$('#screen-cabin').hidden) flight.setCabinView(cabin.spotView()); });
+
 // 도착 화면: 우주선 단추가 우주선을 따라다닌다. 천체 누르기는 캔버스가 받도록 단추 밖은 통과시킨다.
 const shipBtn = $('#ship-btn');
 function placeShipBtn() {
@@ -202,4 +224,4 @@ requestAnimationFrame(loop);
 // 처음 화면
 show('screen-name');
 flight.showLaunch();
-window.__game = { flight, show, openSelect, pick };   // 확인용
+window.__game = { flight, show, openSelect, pick, cabin };   // 확인용

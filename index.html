@@ -45,6 +45,7 @@
         <li>세레스 지도: NASA/JPL-Caltech/UCLA/MPS/DLR/IDA — 던 탐사선 사진(USGS 전구 모자이크), 색을 살짝 입힘.</li>
         <li>3D: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). 글꼴: Jua (Google Fonts, OFL).</li>
         <li>거리는 줄였고(순서는 그대로), 크기 차이는 살렸어요.</li>
+        <li>우주선 안 로봇 설명: NASA 태양계 탐사 자료(<a href="https://science.nasa.gov/solar-system/" target="_blank" rel="noopener">science.nasa.gov</a>)를 바탕으로 쉽게 고쳐 썼어요. 숫자는 비교로 반올림.</li>
       </ul>
       <button id="btn-credits-close" class="btn">닫기</button>
     </div>
@@ -82,6 +83,77 @@
       <div id="arrive-title"></div>
       <div id="arrive-fact"></div>
     </div>
+  </section>
+
+  <!-- 6. 우주선 안: 창틀·계기판 너머로 3D 천체가 보인다 -->
+  <section id="screen-cabin" class="screen" hidden>
+    <div class="cab-frame">
+      <div class="cab-window"><div class="cab-glass"></div></div>
+      <div class="cab-dash">
+        <div class="dash-lights l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="dash-screen"><div class="radar"></div><div id="dash-name"></div></div>
+        <button id="cab-stick" aria-label="조종기 — 다른 곳으로 가기">
+          <span class="stick-base"></span><span class="stick-shaft"></span><span class="stick-ball"></span>
+        </button>
+        <div class="dash-lights r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+    <div class="cab-spot"></div>
+    <div class="cab-talk">
+      <div class="robot-wrap">
+        <button id="robot" aria-label="로봇">
+          <svg viewBox="0 0 200 250" aria-hidden="true">
+            <defs>
+              <radialGradient id="rb-head" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff6f9"/><stop offset="1" stop-color="#ffd3e2"/></radialGradient>
+              <radialGradient id="rb-body" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#eafff7"/><stop offset="1" stop-color="#a9e8d4"/></radialGradient>
+              <radialGradient id="rb-glow"><stop offset="0" stop-color="#bfe4ff" stop-opacity=".7"/><stop offset="1" stop-color="#bfe4ff" stop-opacity="0"/></radialGradient>
+            </defs>
+            <ellipse class="rb-shadow" cx="100" cy="236" rx="46" ry="9" fill="url(#rb-glow)"/>
+            <g class="rb-float">
+              <g class="rb-arm l"><ellipse cx="52" cy="176" rx="13" ry="21" fill="url(#rb-head)" transform="rotate(25 52 176)"/></g>
+              <g class="rb-arm r"><ellipse cx="148" cy="176" rx="13" ry="21" fill="url(#rb-head)" transform="rotate(-25 148 176)"/></g>
+              <ellipse cx="100" cy="182" rx="44" ry="38" fill="url(#rb-body)"/>
+              <path class="rb-heart" d="M100 198 C84 186 84 172 93 170 C97 169 100 172 100 175 C100 172 103 169 107 170 C116 172 116 186 100 198 Z" fill="#ff9ec7"/>
+              <g class="rb-head">
+                <line x1="100" y1="44" x2="100" y2="20" stroke="#c8b6ff" stroke-width="6" stroke-linecap="round"/>
+                <path class="rb-star" d="M100 2 L104.7 11.5 L115 13 L107.5 20.3 L109.3 30.6 L100 25.7 L90.7 30.6 L92.5 20.3 L85 13 L95.3 11.5 Z" fill="#ffd66e"/>
+                <circle cx="31" cy="94" r="15" fill="#ffd66e"/><circle cx="31" cy="94" r="7" fill="#fff0bd"/>
+                <circle cx="169" cy="94" r="15" fill="#ffd66e"/><circle cx="169" cy="94" r="7" fill="#fff0bd"/>
+                <ellipse cx="100" cy="96" rx="70" ry="58" fill="url(#rb-head)"/>
+                <ellipse cx="80" cy="58" rx="22" ry="9" fill="#fff" opacity=".7" transform="rotate(-14 80 58)"/>
+                <g class="rb-eyes">
+                  <ellipse cx="73" cy="100" rx="17" ry="21" fill="#3a3358"/>
+                  <ellipse cx="127" cy="100" rx="17" ry="21" fill="#3a3358"/>
+                  <circle cx="79" cy="92" r="6.5" fill="#fff"/><circle cx="133" cy="92" r="6.5" fill="#fff"/>
+                  <circle cx="68" cy="108" r="3" fill="#fff"/><circle cx="122" cy="108" r="3" fill="#fff"/>
+                </g>
+                <ellipse cx="50" cy="120" rx="10" ry="6" fill="#ff9ec7" opacity=".55"/>
+                <ellipse cx="150" cy="120" rx="10" ry="6" fill="#ff9ec7" opacity=".55"/>
+                <path d="M91 124 Q100 133 109 124" stroke="#3a3358" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+              </g>
+            </g>
+          </svg>
+        </button>
+        <button id="robot-tag" aria-label="로봇 이름 바꾸기"></button>
+      </div>
+      <div class="bubble">
+        <div id="cab-pic"></div>
+        <div id="cab-say"></div>
+        <div id="robot-name-row" hidden>
+          <input id="robot-name-input" type="text" maxlength="8" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+          <div class="name-btns">
+            <button id="robot-name-ok" class="btn">좋아!</button>
+            <button id="robot-name-skip" class="btn btn-soft">그냥 동동이</button>
+          </div>
+        </div>
+        <div class="cab-nav">
+          <button id="cab-prev" class="btn btn-nav" aria-label="앞 장">◀</button>
+          <div class="cab-dots"></div>
+          <button id="cab-next" class="btn btn-nav" aria-label="다음 장">▶</button>
+        </div>
+      </div>
+    </div>
+    <button id="cab-out" class="btn">↩ 밖으로</button>
   </section>
 
   <div id="toast" hidden></div>

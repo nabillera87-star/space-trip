@@ -1,9 +1,10 @@
 // 비행: 조종·카메라·소행성 부딪힘·도착, 그리고 화면 위 2D 표시(미니 지도·이름표·「통!」).
 // 모드: launch(땅 위 발사) · ascend(지구가 둥글게 보이며 올라감) · idle(떠 있음) · flight(조종) · arriving(감속) · arrived(도착 화면)
+//       · cabin-in(조종석 창을 지나 우주선 안으로) · cabin(우주선 안 — 창 너머로 천체를 본다)
 
 import * as THREE from 'three';
 import { BODIES, byId, BELT, MAP_ORDER, arriveRadius, SUN_HOT } from './data.js';
-import { initWorld, resizeWorld, updateWorld, updateRocks, updateGuide, render, renderer, camera, scene, rocks, bodyObjs, pickBody } from './world.js';
+import { initWorld, resizeWorld, updateWorld, updateRocks, updateGuide, render, renderer, camera, scene, rocks, bodyObjs, pickBody, setSpinScale } from './world.js';
 import { createShip, glow, SHIP_LEN } from './ship.js';
 import * as launch from './launch.js';
 import { sfx } from './audio.js';
@@ -14,6 +15,7 @@ const BELT_SPEED = 105;    // 소행성대 안 최고 빠르기
 const BUMP_SPEED = 35;     // 부딪힌 뒤 잠깐
 const SHIP_HIT = 1.3;      // 우주선 부딪힘 반지름
 const ASCEND_DUR = 4.2;
+const CABIN_IN = 1.8;      // 도착 화면 → 우주선 안 줌인 시간(초)
 
 let hud, hctx, W = 0, H = 0, DPR = 1;
 let mode = 'launch', time = 0, modeT = 0;
@@ -64,7 +66,8 @@ function resize() {
   W = window.innerWidth; H = window.innerHeight;
   hud.width = Math.round(W * DPR); hud.height = Math.round(H * DPR);
   resizeWorld();
-  if (mode === 'arrived' && target) frameArrival(target, false);
+  if ((mode === 'arrived' || mode === 'cabin-in' || mode === 'cabin') && target) frameArrival(target, false);
+  if (mode === 'cabin' && target) { frameCabin(target); camera.position.copy(cab.final); camLook.copy(cab.finalLook); camera.lookAt(camLook); }
 }
 
 export function setPaused(p) { paused = p; }
@@ -208,7 +211,11 @@ function update(dt) {
     camera.up.lerp(arrivedView.up, 1 - Math.exp(-2.5 * dt));
     camera.lookAt(camLook);
     thrust = 0.15;
+  } else if (mode === 'cabin-in' || mode === 'cabin') {
+    updateCabin();
+    thrust = 0.15;
   }
+  updateFace(dt);
 
   // 우주선 모습
   const sc = THREE.MathUtils.lerp(shipObj.object.scale.x, ship.scale, 1 - Math.exp(-3 * dt));
@@ -367,6 +374,7 @@ function snapCamera() {
 function arrive() {
   mode = 'arrived'; modeT = 0;
   at = target.id;
+  cab.tapped = false;
   ship.speed = 0; ship.boost = 0; ship.yawRate = ship.pitchRate = 0;
   frameArrival(target, true);
   const done = onArrive; onArrive = null;
@@ -416,15 +424,146 @@ function frameArrival(b, first) {
   }
 }
 
-// 도착 화면에서 누르기: 천체 → 반짝 (우주선은 main.js의 단추가 맡는다)
+// 도착 화면에서 누르기: 천체 → 반짝 + 우주선 안으로 (우주선은 main.js의 단추가 맡는다)
 function tapArrived(x, y) {
   const id = pickBody(x, y);
   if (id && target && id === target.id) {
     bodyObjs[id].pulse = 0.8;
     burst(bodyPos(target), target.r);
     sfx.sparkle();
+    cab.tapped = true;
+    if (onBodyTap) onBodyTap(id);
   }
 }
+
+// ── 우주선 안: 카메라가 우주선 뒤로 다가가 조종석 창을 지나, 창 너머로 천체가 보이는 자리에 선다 ──
+// 조종석(창틀·계기판·로봇)은 main.js 쪽 화면(cabin.js)이 그 위에 덮는다. 여기는 3D 카메라만 맡는다.
+let onBodyTap = null;
+const cab = { view: { x: 0.5, y: 0.4, rad: 150 }, final: V(), finalLook: V(), look0: V(), curve: null, onInside: null, inside: false, tapped: false };
+const face = { on: false, t: 0, want: 0 };
+export function setBodyTap(fn) { onBodyTap = fn; }
+
+// view: 창 너머 천체를 둘 화면 자리 { x, y (0~1), rad (픽셀 반지름) }
+function frameCabin(b) {
+  const B = bodyPos(b);
+  // 해가 비추는 쪽(도착 화면 카메라 쪽)에서 본다 → 밝은 낮 면
+  const dir = V().subVectors(arrivedView.cam, B).normalize();
+  // 고리가 있는 토성·하우메아는 고리가 실처럼 보이지 않게, 해가 비추는 고리 면 쪽에서 비스듬히 본다
+  const lift = { saturn: 0.75, haumea: 0.28 }[b.id];
+  if (lift) {
+    const n = V().set(0, 1, 0).applyQuaternion(bodyObjs[b.id].spin.parent.getWorldQuaternion(new THREE.Quaternion()));
+    if (n.dot(B) > 0) n.negate();   // 해가 비추는 쪽 고리 면
+    dir.addScaledVector(n, lift).normalize();
+  }
+  const ext = { saturn: 2.5, haumea: 2.0, uranus: 1.4, sun: 1.6, pluto: 1.5 }[b.id] || 1;   // 고리·빛무리·카론까지 창 안에
+  const tanH = Math.tan(THREE.MathUtils.degToRad(30));
+  const D = b.r * ext * H / (2 * cab.view.rad * tanH);
+  cab.final.copy(B).addScaledVector(dir, D);
+  // 천체가 화면 (x, y)에 오도록 바라보는 곳을 옮긴다(카메라는 위가 하늘 위로 서 있으니 몇 번 맞춰 본다)
+  const want = new THREE.Vector2(cab.view.x * 2 - 1, 1 - cab.view.y * 2), aim = want.clone();
+  const up = V().set(0, 1, 0), m = new THREE.Matrix4(), q = new THREE.Quaternion(), vb = V();
+  for (let i = 0; i < 6; i++) {
+    const vCam = V().set(aim.x * tanH * (W / H), aim.y * tanH, -1).normalize();
+    q.setFromRotationMatrix(m.lookAt(cab.final, B, up));
+    q.multiply(new THREE.Quaternion().setFromUnitVectors(V().set(0, 0, -1), vCam).invert());
+    cab.finalLook.copy(cab.final).addScaledVector(V().set(0, 0, -1).applyQuaternion(q), D);
+    // 실제로 lookAt 했을 때 천체가 보이는 자리
+    q.setFromRotationMatrix(m.lookAt(cab.final, cab.finalLook, up));
+    vb.subVectors(B, cab.final).applyQuaternion(q.invert());
+    aim.x += want.x - vb.x / -vb.z / (tanH * W / H);
+    aim.y += want.y - vb.y / -vb.z / tanH;
+  }
+}
+
+// onInside: 창을 지나는 순간(조종석 화면을 덮을 때) 부른다
+export function enterCabin(view, onInside) {
+  if (mode !== 'arrived' || !target) return false;
+  cab.view = view; cab.onInside = onInside; cab.inside = false;
+  frameCabin(target);
+  const o = shipObj.object;
+  o.updateMatrixWorld(true);
+  const behind = o.localToWorld(V().set(0, 0.7, 2.6));     // 우주선 뒤쪽 위
+  const canopy = o.localToWorld(V().set(0, 0.22, -0.45));   // 조종석 창 안
+  cab.curve = new THREE.CatmullRomCurve3([camera.position.clone(), behind, canopy, cab.final.clone()], false, 'centripetal');
+  cab.look0.copy(camLook);
+  mode = 'cabin-in'; modeT = 0;
+  setSpinScale(0.5);           // 창 너머 천체는 더 천천히 돈다(설명을 읽는 동안 오래 보이게)
+  faceFeature();
+  sfx.whoosh();
+  return true;
+}
+
+export function setCabinView(view) {
+  cab.view = view;
+  if (target && (mode === 'cabin' || mode === 'cabin-in')) {
+    frameCabin(target);
+    if (mode === 'cabin') { camera.position.copy(cab.final); camLook.copy(cab.finalLook); camera.lookAt(camLook); }
+    else cab.curve.points[3].copy(cab.final);
+  }
+}
+
+export function exitCabin() {
+  if (mode !== 'cabin' && mode !== 'cabin-in') return;
+  mode = 'arrived'; modeT = 0;
+  shipObj.object.visible = true;
+  setSpinScale(1);
+  face.on = false;
+}
+
+const ease = k => k < 0.5 ? 2 * k * k : 1 - (2 - 2 * k) ** 2 / 2;
+const smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); };
+function updateCabin() {
+  const B = bodyPos(target);
+  if (mode === 'cabin') {
+    camera.position.copy(cab.final);
+    camLook.copy(cab.finalLook);
+  } else {
+    const u = ease(clamp(modeT / CABIN_IN, 0, 1));
+    cab.curve.getPoint(u, camera.position);
+    // 창을 지날 때까지는 천체를 보고, 지난 뒤엔 창 너머 자리로
+    if (u < 2 / 3) camLook.lerpVectors(cab.look0, B, smooth(u / 0.45));
+    else camLook.lerpVectors(B, cab.finalLook, smooth((u - 2 / 3) * 3));
+    if (u > 0.4 && !cab.inside) { cab.inside = true; if (cab.onInside) cab.onInside(); }   // 창틀이 먼저 덮이기 시작하고
+    if (u > 0.66) shipObj.object.visible = false;                                          // 조종석 창에 닿을 때 우주선 겉을 감춘다
+    if (modeT >= CABIN_IN) mode = 'cabin';
+  }
+  camera.up.lerp(_u.set(0, 1, 0), 0.2);
+  camera.lookAt(camLook);
+}
+
+// 볼거리(하트·대적점…)를 지금 카메라 쪽으로 천천히 돌린다
+export function faceFeature() {
+  if (!target || target.faceU == null) return;
+  const B = bodyPos(target);
+  const w = V().subVectors(cab.final, B).normalize();
+  const u = target.faceU * Math.PI * 2;
+  face.want = Math.atan2(-w.z, w.x) - Math.atan2(-Math.sin(u), -Math.cos(u)) - 0.25;
+  face.on = true; face.t = 0;
+}
+function updateFace(dt) {
+  if (!face.on || !target) return;
+  face.t += dt;
+  const s = bodyObjs[target.id].spin;
+  s.rotation.y = angLerp(s.rotation.y, face.want, 1 - Math.exp(-2.2 * dt));
+  if (face.t > 3) face.on = false;
+}
+
+// 도착 화면: 잠시 뒤 천체 위에 「눌러 봐」 손가락 표시(한 번 누르면 그 도착에선 그만)
+function drawBodyHint() {
+  if (cab.tapped || modeT < 2.2 || !target) return;
+  const s = toScreen(bodyPos(target));
+  if (s.behind) return;
+  const c = hctx, p = (time * 1.1) % 1;
+  c.strokeStyle = `rgba(255,236,160,${0.85 * (1 - p)})`;
+  c.lineWidth = 5;
+  c.beginPath(); c.arc(s.x, s.y, 20 + p * 46, 0, Math.PI * 2); c.stroke();
+  c.font = '48px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('👆', s.x + 8, s.y + 30);
+  pill('누르면 우주선 안으로', s.x, s.y + 86, { size: 20, bg: 'rgba(255,140,190,0.9)' });
+}
+
+// 목적지 천체의 화면 위치(확인용)
+export function targetScreen() { return target ? toScreen(bodyPos(target)) : null; }
 
 // 우주선의 화면 위치와 크기(도착 화면 단추 자리)
 export function shipScreen() {
@@ -494,7 +633,8 @@ function drawHud() {
   const c = hctx;
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
   c.clearRect(0, 0, W, H);
-  if (mode === 'ascend' || mode === 'arrived') { drawPopups(); return; }
+  if (mode === 'cabin-in' || mode === 'cabin') return;
+  if (mode === 'ascend' || mode === 'arrived') { drawPopups(); if (mode === 'arrived') drawBodyHint(); return; }
   drawLabels();
   drawPopups();
   if (mode === 'flight') { drawEdge(); drawHint(); }

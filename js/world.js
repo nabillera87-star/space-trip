@@ -185,8 +185,9 @@ function makeBody(b) {
   if (b.id === 'venus') group.add(new THREE.Mesh(new THREE.SphereGeometry(b.r * 1.04, 48, 24), rim(0xffe2a0, 3, 0.8)));
   if (b.id === 'neptune' || b.id === 'uranus') group.add(new THREE.Mesh(new THREE.SphereGeometry(b.r * 1.04, 48, 24), rim(b.id === 'neptune' ? 0x7aa6ff : 0xa6fff4, 3, 0.7)));
   if (b.id === 'saturn') {
+    // 고리는 빛을 받지 않는 재질 — 햇빛이 고리 면에 비스듬히 들어와도 어둡게 꺼지지 않게
     const ring = new THREE.Mesh(ringGeometry(b.r * 1.24, b.r * 2.27, 160),
-      new THREE.MeshLambertMaterial({ map: tex('2k_saturn_ring_alpha.png'), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+      new THREE.MeshBasicMaterial({ map: tex('2k_saturn_ring_alpha.png'), color: 0xd8d4cc, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
     tilt.add(ring);
   }
   if (b.id === 'uranus') {
@@ -367,10 +368,12 @@ export function updateGuide(show, t, ship, fwd, up, target, stop) {
 }
 
 // ── 매 프레임 ───────────────────────────────────
+let spinK = 1;
+export function setSpinScale(k) { spinK = k; }   // 자전 빠르기 배율(우주선 안에선 더 천천히)
 export function updateWorld(dt, t) {
   for (const id in bodyObjs) {
     const o = bodyObjs[id];
-    o.spin.rotation.y += o.b.spin * dt;
+    o.spin.rotation.y += o.b.spin * spinK * dt;
     for (const c of o.spin.children) if (c.userData.drift) c.rotation.y += c.userData.drift * dt;
     if (o.group.userData.charonOrbit) o.group.userData.charonOrbit.rotation.y += 0.12 * dt;
     if (o.pulse > 0) {

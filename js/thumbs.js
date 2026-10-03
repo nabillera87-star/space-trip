@@ -4,6 +4,10 @@ import * as THREE from 'three';
 import { byId } from './data.js';
 
 const SIZE = 256;
+// 크기 비교 그림에만 쓰는 천체(목적지가 아님)
+const EXTRA = { charon: { tex: '2k_moon.jpg', tilt: 0, color: 0xc8c2c0 } };
+// 만든 그림을 모아 둔다(우주선 안 설명 블록도 쓴다)
+export const thumbUrls = {};
 
 function ring(inner, outer, mat) {
   const geo = new THREE.RingGeometry(inner, outer, 96, 1);
@@ -22,7 +26,7 @@ export function makeThumbs(ids) {
     const manager = new THREE.LoadingManager();
     const loader = new THREE.TextureLoader(manager);
     const items = ids.map(id => {
-      const b = byId[id];
+      const b = byId[id] || EXTRA[id];
       const scene = new THREE.Scene();
       scene.add(new THREE.AmbientLight(0xaab0dd, 0.9));
       const sun = new THREE.DirectionalLight(0xffffff, 2.4);
@@ -30,7 +34,7 @@ export function makeThumbs(ids) {
       scene.add(sun);
       const t = loader.load('assets/tex/' + b.tex);
       t.colorSpace = THREE.SRGBColorSpace;
-      const mat = id === 'sun' ? new THREE.MeshBasicMaterial({ map: t }) : new THREE.MeshStandardMaterial({ map: t, roughness: 1 });
+      const mat = id === 'sun' ? new THREE.MeshBasicMaterial({ map: t }) : new THREE.MeshStandardMaterial({ map: t, roughness: 1, color: b.color ?? 0xffffff });
       const g = new THREE.Group();
       g.rotation.z = Math.min(b.tilt, 0.5);
       const m = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 32), mat);
@@ -63,7 +67,7 @@ export function makeThumbs(ids) {
       for (const it of items) {
         r.clear();
         r.render(it.scene, it.cam);
-        out[it.id] = canvas.toDataURL('image/png');
+        out[it.id] = thumbUrls[it.id] = canvas.toDataURL('image/png');
       }
       r.dispose();
       r.forceContextLoss();
