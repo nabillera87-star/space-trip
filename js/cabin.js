@@ -38,10 +38,10 @@ export function initCabin(on) {
   screen = $('#screen-cabin');
   $('#cab-next').addEventListener('click', () => go(idx + 1));
   $('#cab-prev').addEventListener('click', () => go(idx - 1));
-  $('#cab-out').addEventListener('click', () => { sfx.tap(); handlers.out(); });
+  $('#cab-out').addEventListener('click', () => { sfx.pop(); handlers.out(); });
   $('#cab-stick').addEventListener('click', pressStick);
   $('#robot').addEventListener('click', () => { robotHop(); sfx.beep(); });
-  $('#robot-tag').addEventListener('click', () => { sfx.tap(); askName(); });
+  $('#robot-tag').addEventListener('click', () => { sfx.pop(); askName(); });
   const input = $('#robot-name-input');
   for (const b of ['#robot-name-ok', '#robot-name-skip']) $(b).addEventListener('pointerdown', e => e.preventDefault());
   $('#robot-name-ok').addEventListener('click', () => setName(input.value));
@@ -51,12 +51,12 @@ export function initCabin(on) {
   // 물어보기
   const q = $('#ask-input');
   q.maxLength = asker.MAX_Q;
-  $('#cab-ask').addEventListener('click', () => { sfx.tap(); openAsk(); });
+  $('#cab-ask').addEventListener('click', () => { sfx.pop(); openAsk(); });
   $('#ask-send').addEventListener('pointerdown', e => e.preventDefault());
   $('#ask-send').addEventListener('click', () => sendQ(q.value));
   q.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) sendQ(q.value); });
-  $('#ask-again').addEventListener('click', () => { sfx.tap(); openAsk(); });
-  for (const b of ['#ask-back', '#ask-done']) $(b).addEventListener('click', () => { sfx.tap(); backToCards(); });
+  $('#ask-again').addEventListener('click', () => { sfx.pop(); openAsk(); });
+  for (const b of ['#ask-back', '#ask-done']) $(b).addEventListener('click', () => { sfx.pop(); backToCards(); });
 }
 
 // 창 너머 천체를 둘 화면 자리(CSS의 .cab-spot) → { x, y (0~1), rad (픽셀) }
@@ -141,7 +141,7 @@ function paintTag() { $('#robot-tag').textContent = robotName || DEFAULT_ROBOT; 
 // ── 설명 블록 ───────────────────────────────────
 function go(i) {
   if (i < 0 || i >= pages.length) return;
-  sfx.page();
+  sfx.pop();
   show(i, false);
 }
 
@@ -181,7 +181,7 @@ function openAsk() {
     const b = document.createElement('button');
     b.className = 'btn preset';
     b.textContent = text;
-    b.addEventListener('click', () => { sfx.tap(); sendQ(text); });
+    b.addEventListener('click', () => { sfx.pop(); sendQ(text); });
     wrap.appendChild(b);
   }
   flip();
@@ -221,7 +221,7 @@ async function sendQ(raw) {
   if (r.ok) {
     pic.appendChild(makePic({ body: bodyId }));
     $('#cab-say').textContent = `${astro} 우주비행사, ${r.text}`;
-    sfx.beep();
+    sfx.notice();
   } else {
     pic.appendChild(makePic('📡'));
     $('#cab-say').textContent = ASK.weak;   // 무엇이 문제인지는 어른용 설정의 「연결 확인」에서만

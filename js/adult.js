@@ -1,7 +1,8 @@
 // 어른용 설정(3회차): 첫 화면 구석의 작은 ⚙️를 2초 길게 눌러야 열린다(아이가 우연히 열기 어렵게).
-// 물어보기에 쓰는 API 키를 넣고, 「연결 확인」으로 무엇이 문제인지 쉬운 말로 본다.
+// 소리 크기(효과음·배경음, 4회차)를 맞추고, 물어보기에 쓰는 API 키를 넣고, 「연결 확인」으로 무엇이 문제인지 쉬운 말로 본다.
 
 import * as asker from './ask.js';
+import { getVol, setVol, unlock, sfx } from './audio.js';
 
 const HOLD_MS = 2000;
 const $ = s => document.querySelector(s);
@@ -27,6 +28,15 @@ export function initAdult({ open, close }) {
     timer = setTimeout(() => { stop(); paint(); $('#adult-status').textContent = ''; open(); }, HOLD_MS);
   });
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) gear.addEventListener(ev, stop);
+
+  // 소리 크기: 0이면 끈 것. 움직이면 바로 들어 볼 수 있다.
+  for (const kind of ['sfx', 'bg']) {
+    const r = $(`#vol-${kind}`), n = $(`#vol-${kind}-n`);
+    const paintV = () => { n.textContent = r.value === '0' ? '끔' : r.value; };
+    r.value = Math.round(getVol()[kind] * 100); paintV();
+    r.addEventListener('input', () => { setVol(kind, r.value / 100); paintV(); });
+    r.addEventListener('change', () => { unlock(); kind === 'sfx' ? sfx.count() : sfx.padPreview(); });
+  }
 
   const input = $('#adult-key');
   $('#adult-check').addEventListener('click', async () => {

@@ -457,3 +457,9 @@ h1 { margin: 0; font-size: clamp(40px, 8vw, 72px); font-weight: normal; color: v
 .adult-box .adult-btns .btn { margin-top: 0; font-size: 22px; padding: 8px 24px; }
 #adult-status { min-height: 1.5em; font-size: 19px; line-height: 1.5; margin-top: 14px; }
 .adult-box .adult-note { font-size: 16px; opacity: .8; margin-top: 14px; }
+.adult-box h3 { margin: 14px 0 6px; font-weight: normal; font-size: 21px; color: #ffe7a3; }
+.vol-row { display: flex; align-items: center; gap: 14px; margin: 8px 0; font-size: 20px; }
+.vol-row span { width: 9.5em; display: flex; flex-direction: column; line-height: 1.2; }
+.vol-row small { font-size: 14px; opacity: .75; }
+.vol-row input { flex: 1; min-width: 0; height: 36px; accent-color: var(--pink); }
+.vol-row b { width: 2.4em; text-align: right; font-weight: normal; }

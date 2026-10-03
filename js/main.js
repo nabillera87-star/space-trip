@@ -5,7 +5,8 @@ import { byId, PICK_ROWS } from './data.js';
 import * as flight from './flight.js';
 import { makeThumbs } from './thumbs.js';
 import * as cabin from './cabin.js';
-import { sfx, unlock, isOn, setOn } from './audio.js';
+import { sfx, unlock, isOn, setOn, say, startCountdownVoice } from './audio.js';
+import * as audio from './audio.js';
 import { initAdult } from './adult.js';
 
 const NAME_KEY = 'space-trip.name';   // 이름은 이 기기 브라우저에만 둔다
@@ -74,15 +75,21 @@ $('#btn-launch').addEventListener('click', () => {
   document.querySelector('.launch-top').hidden = true;
   const cd = $('#countdown');
   flight.countdown();
-  ['3', '2', '1', '발사!'].forEach((s, i) => setTimeout(() => {
-    cd.textContent = s;
+  // 녹음 파일(sounds/countdown.m4a)이 있으면 그 박자에, 없으면 0.95초마다. 말소리는 기기의 한국어 음성.
+  const fileBeat = startCountdownVoice();
+  const beat = fileBeat || 950;
+  const step = i => {
+    cd.textContent = ['3', '2', '1', '발사!'][i];
     cd.classList.toggle('small', i === 3);
     cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
+    if (!fileBeat) say(['삼', '이', '일', '발사!'][i]);
     if (i < 3) { sfx.count(); return; }
     sfx.go();
     flight.liftOff(onLaunchStep);
     setTimeout(() => { cd.textContent = ''; }, 900);   // 올라가는 우주선을 가리지 않게
-  }, i * 950));
+  };
+  step(0);   // 첫 말소리는 누른 순간에(사파리는 그래야 말소리를 낸다)
+  for (let i = 1; i < 4; i++) setTimeout(() => step(i), i * beat);
 });
 
 function onLaunchStep(step) {
@@ -226,4 +233,4 @@ requestAnimationFrame(loop);
 // 처음 화면
 show('screen-name');
 flight.showLaunch();
-window.__game = { flight, show, openSelect, pick, cabin };   // 확인용
+window.__game = { flight, show, openSelect, pick, cabin, audio };   // 확인용

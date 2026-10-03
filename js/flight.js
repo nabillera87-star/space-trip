@@ -7,7 +7,7 @@ import { BODIES, byId, BELT, MAP_ORDER, arriveRadius, SUN_HOT } from './data.js'
 import { initWorld, resizeWorld, updateWorld, updateRocks, updateGuide, render, renderer, camera, scene, rocks, bodyObjs, pickBody, setSpinScale } from './world.js';
 import { createShip, glow, SHIP_LEN } from './ship.js';
 import * as launch from './launch.js';
-import { sfx } from './audio.js';
+import { sfx, drive as driveSound } from './audio.js';
 
 const CRUISE = 60;         // 기본 빠르기(세계 단위/초)
 const BOOST_MAX = 14;      // 목적지 쪽으로 곧게 가면 최대 (1+14)배까지
@@ -23,7 +23,7 @@ let at = 'earth', target = null, onArrive = null, onLaunchDone = null;
 let shipObj;
 const ship = { pos: new THREE.Vector3(), yaw: 0, pitch: 0, yawRate: 0, pitchRate: 0, speed: 0, boost: 0, slowT: 0, align: 0, scale: 1, thrust: 0, freeT: 0 };
 const pointer = { down: false, id: null, x: 0, y: 0, touched: false };
-let popups = [], hotCool = 0, tongCool = 0, bumps = 0, paused = false;
+let popups = [], hotCool = 0, tongCool = 0, swooshCool = 0, turnWas = 0, bumps = 0, paused = false;
 let mapRect = null;
 const camLook = new THREE.Vector3(), camOff = new THREE.Vector3(0, 2, 7), camLookOff = new THREE.Vector3(0, 0, -10);
 const arrivedView = { cam: new THREE.Vector3(), look: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), park: new THREE.Vector3() };
@@ -81,7 +81,7 @@ export function debugState() {
 export function showLaunch() { mode = 'launch'; launch.resetLaunch(); shipObj.object.visible = false; }
 export function countdown() { launch.startCountdown(); }
 // done('space'): 땅 위 장면이 끝나 우주로 넘어갈 때, done('ready'): 지구가 둥글게 보인 뒤 고를 준비가 됐을 때
-export function liftOff(done) { launch.startLift(); onLaunchDone = done; sfx.lift(); }
+export function liftOff(done) { launch.startLift(); onLaunchDone = done; }   // 우르르 소리는 driveSound가 이어서 낸다
 
 function startAscend() {
   mode = 'ascend'; modeT = 0;
@@ -153,10 +153,14 @@ export function frame(dt) {
   if (mode === 'launch') {
     hctx.setTransform(1, 0, 0, 1, 0, 0); hctx.clearRect(0, 0, hud.width, hud.height);
     launch.updateLaunch(dt, time, renderer);
+    driveSound({ mode, phase: launch.launchPhase(), lift: Math.min(1, launch.liftProgress()) }, dt);
     if (launch.liftProgress() >= 1) { startAscend(); if (onLaunchDone) onLaunchDone('space'); }
     return;
   }
   update(Math.min(dt, 1 / 20));
+  // 엔진 소리: 누르는 동안 힘차게, 떼면 잔잔하게(빨리 갈 때는 조금 더)
+  const soundThrust = pointer.down && mode === 'flight' ? 1 : Math.min(ship.thrust, 0.35 + 0.3 * ship.boost);
+  driveSound({ mode, ascend: mode === 'ascend' ? Math.min(1, modeT / ASCEND_DUR) : 0, thrust: soundThrust }, dt);
   updateWorld(dt, time);
   render();
   drawHud();
@@ -176,7 +180,7 @@ function nearOtherBody() {
 }
 
 function update(dt) {
-  hotCool -= dt; tongCool -= dt; ship.slowT -= dt;
+  hotCool -= dt; tongCool -= dt; swooshCool -= dt; ship.slowT -= dt;
   let thrust = 0.25;
 
   if (mode === 'ascend') {
@@ -262,6 +266,10 @@ function steer(dt) {
   ship.pitchRate += (wantPitch - ship.pitchRate) * kr;
   ship.yaw += ship.yawRate * dt;
   ship.pitch = clamp(ship.pitch + ship.pitchRate * dt, -1.15, 1.15);
+  // 방향을 크게 틀기 시작하면 「슝」(계속 돌고 있는 동안 되풀이하지 않게)
+  const turn = Math.max(Math.abs(ship.yawRate) / 1.25, Math.abs(ship.pitchRate) / 0.85);
+  if (turn > 0.6 && turnWas <= 0.6 && swooshCool <= 0 && pointer.down) { sfx.swoosh(-Math.sign(ship.yawRate)); swooshCool = 1.1; }
+  turnWas = turn;
 
   // 도움: 출발할 때·「목적지 보기」·목적지 가까이에서는 저절로 목적지를 정면에
   let assist = 0;
@@ -303,8 +311,7 @@ function steer(dt) {
   if (Math.abs(Math.hypot(ship.pos.x, ship.pos.z) - (BELT.r0 + BELT.r1) / 2) < (BELT.r1 - BELT.r0) / 2 + 40) collideRocks();
 
   if (mode === 'flight' && dist < ar) {
-    mode = 'arriving'; modeT = 0;
-    sfx.arrive();
+    mode = 'arriving'; modeT = 0;   // 감속하며 엔진이 낮아진다(driveSound) → 도착하면 「띠링」
     if (target.id === 'sun') popup('너무 뜨거워!', ship.pos, '#ffd27a', 1.6);
   }
   if (mode === 'arriving' && modeT > 0.9) arrive();
@@ -377,6 +384,7 @@ function arrive() {
   cab.tapped = false;
   ship.speed = 0; ship.boost = 0; ship.yawRate = ship.pitchRate = 0;
   frameArrival(target, true);
+  sfx.arrive();
   const done = onArrive; onArrive = null;
   if (done) done(target.id);
 }

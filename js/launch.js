@@ -122,6 +122,7 @@ export function resetLaunch() {
 }
 export function startCountdown() { phase = 'count'; t = 0; }
 export function startLift() { phase = 'lift'; t = 0; }
+export function launchPhase() { return phase; }
 export function liftProgress() { return phase === 'lift' ? t / LIFT_DUR : 0; }
 
 function placeShip() {

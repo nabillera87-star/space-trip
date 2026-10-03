@@ -42,7 +42,11 @@
   <!-- 어른용 설정(API 키) -->
   <section id="screen-adult" class="screen dim" hidden>
     <div class="credits-box adult-box">
-      <h2>어른용 설정 — 물어보기</h2>
+      <h2>어른용 설정</h2>
+      <h3>소리 크기</h3>
+      <label class="vol-row"><span>효과음<small>엔진·발사·버튼·말소리</small></span><input id="vol-sfx" type="range" min="0" max="100" step="5"><b id="vol-sfx-n"></b></label>
+      <label class="vol-row"><span>배경음<small>우주 화음·조종석 소리</small></span><input id="vol-bg" type="range" min="0" max="100" step="5"><b id="vol-bg-n"></b></label>
+      <h3>물어보기</h3>
       <p>우주선 안 「❓ 물어보기」는 Anthropic API 키가 있어야 돼요. 키는 이 기기 브라우저에만 저장되고, Anthropic 말고 다른 곳으로는 보내지 않아요.</p>
       <div id="adult-saved"></div>
       <input id="adult-key" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-… 키를 붙여 넣기">
@@ -65,6 +69,7 @@
           하우메아·마케마케·에리스는 가까이서 찍은 사진이 없어 같은 곳의 과학 상상도.</li>
         <li>명왕성 지도: NASA/Johns Hopkins APL/Southwest Research Institute — 뉴호라이즌스 사진(PIA11707). 사진이 없는 남쪽 일부는 흐리게 채움.</li>
         <li>세레스 지도: NASA/JPL-Caltech/UCLA/MPS/DLR/IDA — 던 탐사선 사진(USGS 전구 모자이크), 색을 살짝 입힘.</li>
+        <li>소리: 모두 코드로 직접 만든 소리(Web Audio). 카운트다운 말소리는 기기의 한국어 음성.</li>
         <li>3D: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). 글꼴: Jua (Google Fonts, OFL).</li>
         <li>거리는 줄였고(순서는 그대로), 크기 차이는 살렸어요.</li>
         <li>우주선 안 로봇 설명: NASA 태양계 탐사 자료(<a href="https://science.nasa.gov/solar-system/" target="_blank" rel="noopener">science.nasa.gov</a>)를 바탕으로 쉽게 고쳐 썼어요. 숫자는 비교로 반올림.</li>
