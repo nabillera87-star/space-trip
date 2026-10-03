@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="우주 여행">
+  <meta name="theme-color" content="#1f2356">
+  <title>우주 여행</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <canvas id="hud-canvas"></canvas>
+  <div id="fade" hidden></div>
+
+  <!-- 1. 이름 -->
+  <section id="screen-name" class="screen">
+    <div class="name-box">
+      <div class="big-emoji">🚀</div>
+      <h1>우주 여행</h1>
+      <label for="name-input">우주비행사 이름은?</label>
+      <input id="name-input" type="text" maxlength="8" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="이름">
+      <button id="btn-start" class="btn btn-big">출발!</button>
+      <div id="loading">우주를 준비하고 있어요…</div>
+    </div>
+    <button id="btn-credits" class="link-btn">만든 곳</button>
+  </section>
+
+  <!-- 만든 곳(출처) -->
+  <section id="screen-credits" class="screen dim" hidden>
+    <div class="credits-box">
+      <h2>만든 곳</h2>
+      <ul>
+        <li>행성·달·태양·하늘 사진 지도: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener">Solar System Scope</a> (CC BY 4.0) — NASA 탐사 자료 바탕.
+          하우메아·마케마케·에리스는 가까이서 찍은 사진이 없어 같은 곳의 과학 상상도.</li>
+        <li>명왕성 지도: NASA/Johns Hopkins APL/Southwest Research Institute — 뉴호라이즌스 사진(PIA11707). 사진이 없는 남쪽 일부는 흐리게 채움.</li>
+        <li>세레스 지도: NASA/JPL-Caltech/UCLA/MPS/DLR/IDA — 던 탐사선 사진(USGS 전구 모자이크), 색을 살짝 입힘.</li>
+        <li>3D: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). 글꼴: Jua (Google Fonts, OFL).</li>
+        <li>거리는 줄였고(순서는 그대로), 크기 차이는 살렸어요.</li>
+      </ul>
+      <button id="btn-credits-close" class="btn">닫기</button>
+    </div>
+  </section>
+
+  <!-- 2. 발사 -->
+  <section id="screen-launch" class="screen clear" hidden>
+    <div class="launch-top">
+      <div class="who"><span id="astro-name"></span> 우주비행사</div>
+      <div class="sub">준비됐나요?</div>
+    </div>
+    <div id="countdown" class="countdown" aria-live="polite"></div>
+    <button id="btn-launch" class="btn btn-launch">3, 2, 1 발사!</button>
+  </section>
+
+  <!-- 3. 목적지 고르기 -->
+  <section id="screen-select" class="screen dim" hidden>
+    <div class="select-box">
+      <h2><span class="who-small"></span> 어디로 갈까?</h2>
+      <div id="pick-rows"></div>
+    </div>
+  </section>
+
+  <!-- 4. 비행 중 표시 -->
+  <div id="hud" hidden>
+    <button id="btn-choose" class="btn-round" aria-label="다시 고르기">🗺️</button>
+    <div id="target-pill"></div>
+    <button id="btn-aim" class="btn btn-aim">🎯 목적지 보기</button>
+  </div>
+
+  <!-- 5. 도착 -->
+  <section id="screen-arrive" class="screen clear" hidden>
+    <button id="ship-btn" aria-label="우주선 — 다시 출발"><span>🚀 눌러서 다시 출발</span></button>
+    <div class="arrive-text">
+      <div id="arrive-title"></div>
+      <div id="arrive-fact"></div>
+    </div>
+  </section>
+
+  <div id="toast" hidden></div>
+  <button id="btn-sound" class="btn-round" aria-label="소리">🔊</button>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
