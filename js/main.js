@@ -6,6 +6,7 @@ import * as flight from './flight.js';
 import { makeThumbs } from './thumbs.js';
 import * as cabin from './cabin.js';
 import { sfx, unlock, isOn, setOn } from './audio.js';
+import { initAdult } from './adult.js';
 
 const NAME_KEY = 'space-trip.name';   // 이름은 이 기기 브라우저에만 둔다
 const $ = s => document.querySelector(s);
@@ -22,7 +23,7 @@ function saveName(n) { try { localStorage.setItem(NAME_KEY, n); } catch {} }
 function show(id) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== id;
   $('#hud').hidden = id !== null;
-  flight.setPaused(id === 'screen-name' || id === 'screen-credits');
+  flight.setPaused(id === 'screen-name' || id === 'screen-credits' || id === 'screen-adult');
 }
 
 function toast(text, ms = 1400) {
@@ -64,6 +65,7 @@ input.addEventListener('keydown', e => { if (e.key === 'Enter') start(); });
 
 $('#btn-credits').addEventListener('click', () => show('screen-credits'));
 $('#btn-credits-close').addEventListener('click', () => show('screen-name'));
+initAdult({ open: () => show('screen-adult'), close: () => show('screen-name') });
 
 // ── 2. 발사 ──────────────────────────────────────
 $('#btn-launch').addEventListener('click', () => {

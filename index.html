@@ -32,6 +32,28 @@
       <div id="loading">우주를 준비하고 있어요…</div>
     </div>
     <button id="btn-credits" class="link-btn">만든 곳</button>
+    <!-- 어른용 설정: 2초 길게 눌러야 열린다 -->
+    <button id="btn-adult" aria-label="어른용 설정(길게 누르기)">
+      <svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" /></svg>
+      <span>⚙️</span>
+    </button>
+  </section>
+
+  <!-- 어른용 설정(API 키) -->
+  <section id="screen-adult" class="screen dim" hidden>
+    <div class="credits-box adult-box">
+      <h2>어른용 설정 — 물어보기</h2>
+      <p>우주선 안 「❓ 물어보기」는 Anthropic API 키가 있어야 돼요. 키는 이 기기 브라우저에만 저장되고, Anthropic 말고 다른 곳으로는 보내지 않아요.</p>
+      <div id="adult-saved"></div>
+      <input id="adult-key" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-… 키를 붙여 넣기">
+      <div class="adult-btns">
+        <button id="adult-check" class="btn">연결 확인</button>
+        <button id="adult-clear" class="btn btn-soft">키 지우기</button>
+        <button id="adult-close" class="btn btn-soft">닫기</button>
+      </div>
+      <div id="adult-status" aria-live="polite"></div>
+      <p class="adult-note">아이패드에서는 공유 → 홈 화면에 추가로 열어야 키와 이름이 오래 남아요.</p>
+    </div>
   </section>
 
   <!-- 만든 곳(출처) -->
@@ -46,6 +68,7 @@
         <li>3D: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). 글꼴: Jua (Google Fonts, OFL).</li>
         <li>거리는 줄였고(순서는 그대로), 크기 차이는 살렸어요.</li>
         <li>우주선 안 로봇 설명: NASA 태양계 탐사 자료(<a href="https://science.nasa.gov/solar-system/" target="_blank" rel="noopener">science.nasa.gov</a>)를 바탕으로 쉽게 고쳐 썼어요. 숫자는 비교로 반올림.</li>
+        <li>「❓ 물어보기」 대답: Anthropic Claude(Haiku)가 만들어요. 질문 글자와 지금 있는 천체 이름만 보내고, 이름은 보내지 않아요.</li>
       </ul>
       <button id="btn-credits-close" class="btn">닫기</button>
     </div>
@@ -95,6 +118,7 @@
         <button id="cab-stick" aria-label="조종기 — 다른 곳으로 가기">
           <span class="stick-base"></span><span class="stick-shaft"></span><span class="stick-ball"></span>
         </button>
+        <button id="cab-ask" class="btn" hidden><span class="q">❓</span><span>물어보기</span></button>
         <div class="dash-lights r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
@@ -145,6 +169,19 @@
             <button id="robot-name-ok" class="btn">좋아!</button>
             <button id="robot-name-skip" class="btn btn-soft">그냥 동동이</button>
           </div>
+        </div>
+        <div id="ask-row" hidden>
+          <div class="ask-input">
+            <input id="ask-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="궁금한 걸 말해 봐">
+            <button id="ask-send" class="btn">보내기</button>
+          </div>
+          <div class="mic-hint"><span class="key"><span>🎤</span></span>키보드의 마이크를 눌러 말해 봐</div>
+          <div id="ask-presets"></div>
+          <button id="ask-back" class="btn btn-soft">설명으로 돌아가기</button>
+        </div>
+        <div id="answer-btns" hidden>
+          <button id="ask-again" class="btn">❓ 또 물어보기</button>
+          <button id="ask-done" class="btn btn-soft">설명으로 돌아가기</button>
         </div>
         <div class="cab-nav">
           <button id="cab-prev" class="btn btn-nav" aria-label="앞 장">◀</button>

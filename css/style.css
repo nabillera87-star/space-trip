@@ -380,3 +380,80 @@ h1 { margin: 0; font-size: clamp(40px, 8vw, 72px); font-weight: normal; color: v
   background: #7cc8f5; box-shadow: 0 6px 0 #4fa3d6, 0 10px 20px rgba(0,0,0,.2);
 }
 #cab-out:active { box-shadow: 0 2px 0 #4fa3d6; }
+
+/* 7. 물어보기(3회차) */
+#cab-ask {
+  position: absolute; bottom: max(14px, env(safe-area-inset-bottom));
+  left: calc(50% + clamp(65px, 8.5vh, 85px) + 14px);
+  width: clamp(118px, 15vh, 150px); padding: 8px 6px 10px; border-radius: 30px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: clamp(20px, 2.9vh, 26px); pointer-events: auto;
+  background: #ffbf5e; box-shadow: 0 6px 0 #e59a2f, 0 0 22px rgba(255,191,94,.6);
+}
+#cab-ask:active { box-shadow: 0 2px 0 #e59a2f; }
+#cab-ask .q { font-size: clamp(34px, 5vh, 46px); line-height: 1; }
+@media (orientation: portrait) { .cab-dash:has(#cab-ask:not([hidden])) .dash-lights.r { visibility: hidden; } }
+
+#screen-cabin.asking .cab-talk { bottom: auto; top: max(96px, 12vh); left: 50%; transform: translateX(-50%); width: min(94vw, 800px); align-items: flex-start; }
+@media (orientation: portrait) { #screen-cabin.asking .cab-talk { top: 42vh; } }   /* 세로: 창 너머 천체를 가리지 않고, 키보드 위에 입력칸이 남게 */
+#ask-row { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.ask-input { display: flex; gap: 10px; width: 100%; align-items: center; }
+#ask-input {
+  flex: 1; min-width: 0; font-family: var(--font); font-size: clamp(28px, 4.2vh, 40px);
+  padding: 8px 16px; border-radius: 24px; border: 5px solid var(--lav); background: #fff; color: var(--ink); outline: none;
+  -webkit-user-select: text; user-select: text;
+}
+#ask-input:focus { border-color: var(--yellow); }
+#ask-input::placeholder { color: #cfc8e6; }
+#ask-input.shake { animation: shake .4s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+#ask-send { flex: none; font-size: clamp(26px, 3.8vh, 34px); padding: 12px 26px; }
+.mic-hint { display: flex; align-items: center; gap: 10px; font-size: clamp(19px, 2.7vh, 24px); color: #6a5aa8; }
+.mic-hint .key {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 46px; height: 46px; border-radius: 11px; background: #f1f2f8; font-size: 26px;
+  box-shadow: 0 3px 0 #b6b9cc, 0 0 0 2px #dcdfee inset;
+}
+.mic-hint .key span { animation: twinkle 1.6s ease-in-out infinite; }
+#ask-presets { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 10px; }
+.preset { font-size: clamp(21px, 3vh, 28px); padding: 10px 20px; background: #b9a6ff; box-shadow: 0 6px 0 #8f78e6; }
+.preset:active { box-shadow: 0 2px 0 #8f78e6; }
+#ask-back, #ask-done { font-size: clamp(19px, 2.6vh, 24px); padding: 8px 22px; }
+#answer-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 4px; }
+#ask-again { font-size: clamp(22px, 3.2vh, 30px); padding: 10px 24px; background: #ffbf5e; box-shadow: 0 6px 0 #e59a2f; }
+#ask-again:active { box-shadow: 0 2px 0 #e59a2f; }
+.bubble.answer #cab-pic { flex-direction: column; gap: 2px; }
+.bubble.answer .pic-body { width: clamp(60px, 9vh, 84px); height: clamp(60px, 9vh, 84px); }
+.bubble.answer .pic-emoji { font-size: clamp(44px, 7vh, 64px); }
+.heard { font-size: clamp(19px, 2.6vh, 24px); color: #8a80b0; text-align: center; word-break: keep-all; }
+
+/* 로봇이 생각하는 몸짓: 눈 굴리기 + 안테나 반짝 + 고개 갸웃 */
+#robot.thinking .rb-eyes { animation: look 1.8s ease-in-out infinite; }
+@keyframes look { 0%, 100% { transform: none; } 25% { transform: translate(-7px, -4px); } 60% { transform: translate(7px, -5px); } }
+#robot.thinking .rb-star { animation: starThink .7s ease-in-out infinite; }
+@keyframes starThink { 50% { transform: scale(1.35) rotate(18deg); fill: #fff3b0; filter: drop-shadow(0 0 8px #ffd66e); } }
+#robot.thinking .rb-head { animation: ponder 1.8s ease-in-out infinite; }
+@keyframes ponder { 50% { transform: rotate(-6deg); } }
+
+/* 어른용 설정: 작고 흐린 ⚙️, 누르고 있으면 둘레가 2초 동안 차오른다 */
+#btn-adult {
+  position: absolute; left: 14px; bottom: max(14px, env(safe-area-inset-bottom));
+  width: 48px; height: 48px; padding: 0; border: none; background: none; opacity: .45;
+  font-size: 24px; line-height: 48px;
+}
+#btn-adult svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+#btn-adult circle { fill: none; stroke: var(--yellow); stroke-width: 3; stroke-dasharray: 120; stroke-dashoffset: 120; }
+#btn-adult.holding { opacity: .9; }
+#btn-adult.holding circle { stroke-dashoffset: 0; transition: stroke-dashoffset 2s linear; }
+#btn-adult span { position: relative; pointer-events: none; }
+.adult-box p { font-size: 18px; line-height: 1.5; margin: 6px 0 12px; }
+#adult-saved { font-size: 18px; margin-bottom: 8px; color: #dfe; font-family: ui-monospace, Menlo, monospace; }
+#adult-key {
+  width: 100%; font-size: 20px; padding: 10px 14px; border-radius: 14px; border: 3px solid var(--lav);
+  background: #fff; color: var(--ink); outline: none; font-family: ui-monospace, Menlo, monospace;
+  -webkit-text-security: disc; -webkit-user-select: text; user-select: text;
+}
+.adult-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.adult-box .adult-btns .btn { margin-top: 0; font-size: 22px; padding: 8px 24px; }
+#adult-status { min-height: 1.5em; font-size: 19px; line-height: 1.5; margin-top: 14px; }
+.adult-box .adult-note { font-size: 16px; opacity: .8; margin-top: 14px; }

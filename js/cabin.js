@@ -1,8 +1,9 @@
 // 우주선 안(2회차): 조종석 창틀·계기판·조종기, 로봇, 설명 블록(한 장씩 넘기기).
 // 3D(창 너머 천체로 다가가는 카메라)는 flight.js가 맡고, 여기는 그 위에 덮는 화면만 맡는다.
-// 설명 글은 cards.js에 있다.
+// 설명 글은 cards.js에 있다. 물어보기(3회차)는 ask.js가 묻고, 여기서는 그 화면만 맡는다.
 
-import { CARDS, LAST, NAME_ASK, NAME_THANKS, DEFAULT_ROBOT, EXTRA_SIZES } from './cards.js';
+import { CARDS, LAST, NAME_ASK, NAME_THANKS, DEFAULT_ROBOT, EXTRA_SIZES, ASK, QUESTIONS } from './cards.js';
+import * as asker from './ask.js';
 import { byId } from './data.js';
 import { thumbUrls } from './thumbs.js';
 import { sfx } from './audio.js';
@@ -12,6 +13,8 @@ const $ = s => document.querySelector(s);
 
 let screen, pages = [], idx = 0, bodyId = null, astro = '', handlers = {};
 let robotName = '';
+// 말풍선이 지금 무엇을 보이나: cards(설명) | name(로봇 이름) | ask(묻기) | think(생각 중) | answer(대답)
+let mode = 'cards', askNo = 0, askCtl = null;
 try { robotName = localStorage.getItem(ROBOT_KEY) || ''; } catch {}
 
 // ── 글 채우기: {아이} {로봇}, 받침에 따라 {로봇:이야} → 「동동이야 / 별님이야」 ──
@@ -44,6 +47,16 @@ export function initCabin(on) {
   $('#robot-name-ok').addEventListener('click', () => setName(input.value));
   $('#robot-name-skip').addEventListener('click', () => setName(''));
   input.addEventListener('keydown', e => { if (e.key === 'Enter') setName(input.value); });
+
+  // 물어보기
+  const q = $('#ask-input');
+  q.maxLength = asker.MAX_Q;
+  $('#cab-ask').addEventListener('click', () => { sfx.tap(); openAsk(); });
+  $('#ask-send').addEventListener('pointerdown', e => e.preventDefault());
+  $('#ask-send').addEventListener('click', () => sendQ(q.value));
+  q.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) sendQ(q.value); });
+  $('#ask-again').addEventListener('click', () => { sfx.tap(); openAsk(); });
+  for (const b of ['#ask-back', '#ask-done']) $(b).addEventListener('click', () => { sfx.tap(); backToCards(); });
 }
 
 // 창 너머 천체를 둘 화면 자리(CSS의 .cab-spot) → { x, y (0~1), rad (픽셀) }
@@ -63,6 +76,7 @@ export function openCabin(id, astroName) {
   $('#cab-stick').classList.remove('pushed', 'call');
   $('#dash-name').textContent = id === 'earth' ? '지구 🏠' : byId[id].name;
   paintTag();
+  cancelAsk();
   if (!robotName) { askName(true); return; }
   pages = [...CARDS[id], LAST];
   show(0, true);
@@ -71,15 +85,37 @@ export function openCabin(id, astroName) {
 export function leaveCabin() {
   screen.classList.add('leaving');
   $('#robot-name-input').blur();
+  $('#ask-input').blur();
+  cancelAsk();
+}
+
+// 말풍선 모드 바꾸기: 모드마다 보이는 줄이 다르다
+function setMode(m) {
+  mode = m;
+  screen.classList.toggle('naming', m === 'name');
+  screen.classList.toggle('asking', m === 'ask');
+  $('#robot-name-row').hidden = m !== 'name';
+  $('#ask-row').hidden = m !== 'ask';
+  $('#answer-btns').hidden = m !== 'answer' && m !== 'think';
+  $('#ask-again').hidden = m !== 'answer';   // 생각하는 동안에는 「설명으로 돌아가기」만
+  $('.cab-nav').hidden = m !== 'cards';
+  $('#cab-pic').hidden = m === 'name' || m === 'ask';
+  // 키가 없으면 물어보기 단추는 아예 없다(눌러도 안 되는 단추는 두지 않는다)
+  $('#cab-ask').hidden = !(m === 'cards' && asker.hasKey());
+  $('#robot').classList.toggle('thinking', m === 'think');
+  $('.bubble').classList.toggle('answer', m === 'think' || m === 'answer');
+}
+
+function flip() {
+  const bubble = $('.bubble');
+  bubble.classList.remove('flip'); void bubble.offsetWidth; bubble.classList.add('flip');
 }
 
 // ── 로봇 이름 ───────────────────────────────────
 function askName(first = false) {
-  screen.classList.add('naming');
-  $('#robot-name-row').hidden = false;
-  $('.cab-nav').hidden = true;
+  cancelAsk();
+  setMode('name');
   $('#cab-pic').innerHTML = '';
-  $('#cab-pic').hidden = true;
   $('#cab-say').textContent = NAME_ASK;
   const input = $('#robot-name-input');
   input.value = robotName && robotName !== DEFAULT_ROBOT ? robotName : '';
@@ -93,9 +129,6 @@ function setName(v) {
   robotName = n || robotName || DEFAULT_ROBOT;
   try { localStorage.setItem(ROBOT_KEY, robotName); } catch {}
   $('#robot-name-input').blur();
-  screen.classList.remove('naming');
-  $('#robot-name-row').hidden = true;
-  $('#cab-pic').hidden = false;
   paintTag();
   sfx.beep();
   // 고맙다는 장 다음에 이 천체 설명을 처음부터(이름표를 눌러 바꿨을 때도)
@@ -116,12 +149,11 @@ function show(i, first) {
   idx = i;
   const p = pages[i];
   const say = $('#cab-say'), pic = $('#cab-pic');
-  $('.cab-nav').hidden = false;
+  setMode('cards');
   say.textContent = fill(p.text);
   pic.innerHTML = '';
   pic.appendChild(makePic(p.pic));
-  const bubble = $('.bubble');
-  bubble.classList.remove('flip'); void bubble.offsetWidth; bubble.classList.add('flip');
+  flip();
   $('#cab-prev').style.visibility = i > 0 ? 'visible' : 'hidden';
   $('#cab-next').style.visibility = i < pages.length - 1 ? 'visible' : 'hidden';
   const dots = $('.cab-dots');
@@ -135,6 +167,80 @@ function show(i, first) {
   if (p.face) handlers.face?.();
   if (first) setTimeout(() => { robotWave(); sfx.beep(); }, 700);
   else robotNod();
+}
+
+// ── 물어보기 ─────────────────────────────────────
+function openAsk() {
+  cancelAsk();
+  setMode('ask');
+  $('#cab-say').textContent = ASK.prompt;
+  $('#ask-input').value = '';
+  const wrap = $('#ask-presets');
+  wrap.innerHTML = '';
+  for (const text of QUESTIONS[bodyId] || []) {
+    const b = document.createElement('button');
+    b.className = 'btn preset';
+    b.textContent = text;
+    b.addEventListener('click', () => { sfx.tap(); sendQ(text); });
+    wrap.appendChild(b);
+  }
+  flip();
+  robotWave();
+}
+
+async function sendQ(raw) {
+  if (mode !== 'ask') return;
+  const input = $('#ask-input');
+  const q = raw.trim().slice(0, asker.MAX_Q);
+  if (!q) { retrigger(input, 'shake'); return; }
+  input.blur();
+  sfx.beep();
+  // 생각하는 동안: 들은 질문을 위에 작게, 로봇은 눈을 굴리고 안테나를 반짝
+  setMode('think');
+  const pic = $('#cab-pic');
+  pic.innerHTML = '';
+  const heard = document.createElement('div');
+  heard.className = 'heard';
+  heard.textContent = `「${q}」`;
+  pic.appendChild(heard);
+  $('#cab-say').textContent = ASK.thinking;
+  flip();
+
+  const no = ++askNo;
+  askCtl = new AbortController();
+  const names = [[astro, '나'], [robotName, '로봇']];
+  const [r] = await Promise.all([
+    asker.ask(bodyId, q, names, askCtl.signal),
+    new Promise(res => setTimeout(res, 900)),   // 너무 빨리 바뀌어 깜빡이지 않게
+  ]);
+  if (no !== askNo || mode !== 'think') return;   // 그사이 다른 데로 갔다
+  askCtl = null;
+  setMode('answer');
+  pic.innerHTML = '';
+  pic.appendChild(heard);
+  if (r.ok) {
+    pic.appendChild(makePic({ body: bodyId }));
+    $('#cab-say').textContent = `${astro} 우주비행사, ${r.text}`;
+    sfx.beep();
+  } else {
+    pic.appendChild(makePic('📡'));
+    $('#cab-say').textContent = ASK.weak;   // 무엇이 문제인지는 어른용 설정의 「연결 확인」에서만
+  }
+  flip();
+  robotNod();
+}
+
+function cancelAsk() {
+  askNo++;
+  askCtl?.abort();
+  askCtl = null;
+  $('#robot')?.classList.remove('thinking');
+}
+
+function backToCards() {
+  cancelAsk();
+  $('#ask-input').blur();
+  show(idx, false);
 }
 
 // ── 그림 ────────────────────────────────────────
